@@ -32,8 +32,8 @@
       <ol id="lines"></ol>
       <div id="hintBox" hidden></div>
     </section>
-    <section id="pool" class="panel"><div class="ptitle"><span>Answer blocks</span><span>drag into the boxes</span></div><div id="handNote" hidden>Show one hand to the camera. Pinch to grab a block, open to drop it.</div></section>
   </main>
+  <div id="handNote" hidden>Show one hand to the camera. Pinch to grab a block, open to drop it.</div>
   <div id="tiles"></div>
   <canvas id="fx"></canvas>
   <div class="screen" id="start">
@@ -41,9 +41,12 @@
       <h2>Practice: <span>Types of systems</span></h2>
       <p>Compare the coefficient ratios and classify. Every try gives new numbers. Fill the boxes on each line; a correct line unlocks the next one until you reach the final answer.</p>
       <div class="how"><div><b>1</b>Grab a floating answer block</div><div><b>2</b>Drop it into a box on the current line</div><div><b>3</b>Fill every box to check the line</div></div>
+      <div class="handset" id="handSetStart"></div>
       <div class="acts"><button class="btn primary big" id="playCam" type="button">Play with hand pinch</button><button class="btn big" id="playMouse" type="button">Play with mouse / touch</button></div>
       <div id="startMsg" hidden></div>
       <a class="back" href="index.html">All practice activities</a>
+      <!-- TODO: add the author name and licence of the Sketchfab model "Human Hand Base Mesh" -->
+      <p class="credit">3D hand: Human Hand Base Mesh (Sketchfab)</p>
     </div>
   </div>
   <div class="screen" id="done" hidden>
@@ -57,6 +60,9 @@
 </div>
 <script>window.PRACTICE = { id: "types", title: "Types of systems" };</script>
 <script src="../assets/katex/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="../assets/hand-mesh-data.js"></script>
+<script src="../assets/hand3d.js"></script>
 <script src="problems.js"></script>
 <script src="practice.js"></script>
 

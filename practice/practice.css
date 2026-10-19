@@ -17,7 +17,7 @@ button,a{font-family:var(--ui)}
   -webkit-user-select:none;user-select:none}
 #cam{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0;pointer-events:none;transition:opacity .4s}
 body.hand #cam{opacity:.28}
-#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8}
+#fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:9}
 #tiles{position:absolute;inset:0;pointer-events:none;z-index:7;overflow:hidden}
 
 /* HUD */
@@ -35,7 +35,7 @@ body.hand #cam{opacity:.28}
 .btn.big{font:400 20px var(--display);padding:14px 22px;letter-spacing:.02em}
 
 /* Board */
-#board{position:relative;z-index:2;display:grid;grid-template-columns:minmax(250px,.95fr) minmax(320px,1.45fr) minmax(240px,1fr);gap:12px;min-height:0}
+#board{position:relative;z-index:2;display:grid;grid-template-columns:minmax(250px,.95fr) minmax(320px,1.45fr);gap:12px;min-height:0}
 .panel{background:var(--panel);border:1px solid var(--panel-line);border-radius:18px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);min-height:0;min-width:0;position:relative}
 .ptitle{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
 #left{display:flex;flex-direction:column;gap:12px;padding:16px;overflow:auto}
@@ -89,9 +89,24 @@ body.hand #cam{opacity:.28}
 #flash.good{background:var(--good);color:#06240f}
 #flash.bad{background:var(--bad);color:#2a0606}
 
-#pool{padding:12px 14px;overflow:hidden;touch-action:none}
-#pool .ptitle{display:flex;justify-content:space-between;gap:8px}
-#handNote{position:absolute;left:12px;right:12px;bottom:12px;font-size:13px;color:var(--muted);text-align:center}
+/* Play area: answer blocks roam everywhere inside this dashed boundary (placed by practice.js) */
+#bounds{position:absolute;z-index:6;border:2px dashed rgba(245,184,61,.28);border-radius:28px;pointer-events:none}
+#bounds span{position:absolute;top:-11px;left:24px;background:var(--bg);padding:0 8px;font-size:12px;color:rgba(245,184,61,.75);letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+#handNote{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:6;width:calc(100% - 32px);font-size:13px;color:var(--muted);text-align:center;pointer-events:none}
+
+/* Hand settings (start card and HUD popover) */
+.handset{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 10px;margin:4px 0 0;font-size:13px;color:var(--muted)}
+.handset .hs-t{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px}
+.handset .hs-sw{display:flex;gap:6px}
+.handset .hs-sw button{width:24px;height:24px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.handset .hs-sw button[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 10px currentColor}
+.handset .hs-seg{appearance:none;border-radius:999px;border:1px solid var(--panel-line);background:transparent;color:var(--fg);font:700 12px var(--ui);padding:3px 10px;cursor:pointer}
+.handset .hs-seg:hover{border-color:var(--accent);color:var(--accent)}
+.handset label{display:inline-flex;align-items:center;gap:6px}
+.handset input[type=range]{width:90px;accent-color:var(--accent)}
+.handset button:focus-visible,.handset input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#handPop{position:absolute;z-index:12;right:max(16px,env(safe-area-inset-right,0px));padding:12px 14px;border-radius:16px;background:#16223d;border:1px solid var(--panel-line);box-shadow:0 18px 40px rgba(0,0,0,.5);max-width:calc(100% - 32px)}
+.credit{font-size:12px!important;margin:10px 0 0!important;opacity:.8}
 
 /* Tiles */
 .tile{position:absolute;left:0;top:0;min-width:46px;height:40px;padding:0 12px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;border-radius:12px;
@@ -121,7 +136,7 @@ body.hand #cam{opacity:.28}
 
 @media (max-width:900px){
   body{overflow:hidden}
-  #board{grid-template-columns:1fr;grid-template-rows:minmax(0,auto) minmax(0,1fr) 190px;gap:8px}
+  #board{grid-template-columns:1fr;grid-template-rows:minmax(0,auto) minmax(0,1fr);gap:8px}
   #left{max-height:32vh;padding:12px}
   #visual svg{max-width:220px}
   #prompt .ptext{font-size:15px}

@@ -1,11 +1,10 @@
 /* Pinch practice engine: step-by-step solutions with floating answer blocks.
    A page defines window.PRACTICE = { id, title, lesson } and loads problems.js, which registers generators.
-   Input: hand tracking (MediaPipe, pinch to grab, open to drop) or mouse / touch drag. */
+   Input: hand tracking (MediaPipe, pinch to grab, open to drop; drawn as a 3D wire hand by assets/hand3d.js) or mouse / touch drag. */
 (() => {
   const $ = (s) => document.querySelector(s);
   const cfg = window.PRACTICE, GEN = window.PROBLEMS[cfg.id];
   const app = $("#app"), tilesEl = $("#tiles"), video = $("#cam"), cv = $("#fx"), ctx = cv.getContext("2d");
-  const CONN = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
   const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
   /* ---------- math rendering ---------- */
@@ -92,17 +91,65 @@
     lis[i].scrollIntoView({ block: "nearest", behavior: "smooth" });
     updateHud();
   }
-  function poolRect() { const r = $("#pool").getBoundingClientRect(), a = app.getBoundingClientRect(); return { x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height }; }
+  /* ---------- play area: blocks roam the whole board inside an inset boundary ---------- */
+  const boundsEl = document.createElement("div"); boundsEl.id = "bounds"; boundsEl.innerHTML = "<span>Play area</span>"; app.appendChild(boundsEl);
+  let B = { l: 0, t: 0, r: 0, b: 0 };
+  function measureArea() {
+    const W = app.clientWidth, H = app.clientHeight, m = Math.max(28, Math.min(W, H) * .07), top = $("#hud").getBoundingClientRect().bottom - app.getBoundingClientRect().top + 6;
+    const n = { l: m, t: top, r: W - m, b: Math.max(top + 80, H - m - 26) };
+    if (n.l !== B.l || n.t !== B.t || n.r !== B.r || n.b !== B.b) {
+      B = n; Object.assign(boundsEl.style, { left: B.l + "px", top: B.t + "px", width: B.r - B.l + "px", height: B.b - B.t + "px" });
+    }
+  }
+
+  /* ---------- 3D hand look (same localStorage keys as the demo) ---------- */
+  const COLORS = { Lime: "#b6ff3b", Cyan: "#3be8ff", Pink: "#ff5fd2", Amber: "#ffbf3b", White: "#f2f6ff" };
+  const look = { color: COLORS.Lime, fewWires: true, opacity: .55 };
+  try {
+    const c = localStorage.getItem("hand-color"); if (c && Object.values(COLORS).includes(c)) look.color = c;
+    look.fewWires = localStorage.getItem("hand-wires") !== "more";
+    const o = +localStorage.getItem("hand-opacity"); if (o >= .15 && o <= 1) look.opacity = o;
+  } catch (_) {}
+  const handUIs = [];
+  function syncHandUI() {
+    handUIs.forEach((u) => {
+      u.sw.forEach((b) => b.setAttribute("aria-pressed", b.dataset.c === look.color));
+      u.wires.textContent = look.fewWires ? "Less" : "More"; u.range.value = Math.round(look.opacity * 100);
+    });
+    if (window.HandView) HandView.setLook({ fewWires: look.fewWires, opacity: look.opacity });
+  }
+  function buildHandControls(host) {
+    host.innerHTML = '<span class="hs-t">Hand</span><span class="hs-sw"></span><span>Wires <button class="hs-seg" type="button" title="Fewer or more wire lines"></button></span><label>See-through <input type="range" min="15" max="100" step="5" aria-label="Hand see-through"></label>';
+    const swEl = host.querySelector(".hs-sw"), u = { sw: [], wires: host.querySelector(".hs-seg"), range: host.querySelector("input") };
+    Object.entries(COLORS).forEach(([n, c]) => {
+      const b = document.createElement("button"); b.type = "button"; b.title = n; b.setAttribute("aria-label", n + " hand"); b.dataset.c = c; b.style.background = c; b.style.color = c;
+      b.onclick = () => { look.color = c; try { localStorage.setItem("hand-color", c); } catch (_) {} syncHandUI(); };
+      swEl.appendChild(b); u.sw.push(b);
+    });
+    u.wires.onclick = () => { look.fewWires = !look.fewWires; try { localStorage.setItem("hand-wires", look.fewWires ? "less" : "more"); } catch (_) {} syncHandUI(); };
+    u.range.oninput = () => { look.opacity = u.range.value / 100; try { localStorage.setItem("hand-opacity", look.opacity); } catch (_) {} syncHandUI(); };
+    handUIs.push(u);
+  }
+  const handViewOK = !!(window.HandView && HandView.init(app));
+  buildHandControls($("#handSetStart"));
+  // HUD menu: the same group in a small popover, so the look can be tuned while the hand is on screen
+  const handBtn = document.createElement("button"); handBtn.className = "btn"; handBtn.type = "button"; handBtn.id = "handBtn"; handBtn.title = "Hand look"; handBtn.hidden = true; handBtn.innerHTML = '<span class="lbl">Hand</span><span aria-hidden="true">✋</span>';
+  const handPop = document.createElement("div"); handPop.id = "handPop"; handPop.hidden = true; app.appendChild(handPop);
+  buildHandControls(handPop); syncHandUI();
+  $("#menuBtn").after(handBtn);
+  handBtn.onclick = () => { handPop.hidden = !handPop.hidden; if (!handPop.hidden) handPop.style.top = (handBtn.getBoundingClientRect().bottom - app.getBoundingClientRect().top + 8) + "px"; };
+  document.addEventListener("pointerdown", (e) => { if (!handPop.hidden && !e.target.closest("#handPop, #handBtn")) handPop.hidden = true; });
   function addTile(label) {
     const el = document.createElement("div");
     el.className = "tile " + kindOf(label);
     el.innerHTML = labelHTML(label);
     tilesEl.appendChild(el);
-    const P = poolRect(), w = el.offsetWidth, h = el.offsetHeight;
+    measureArea();
+    const w = el.offsetWidth, h = el.offsetHeight;
     let x = 0, y = 0;
     for (let k = 0; k < 60; k++) {
-      x = P.x + 10 + Math.random() * Math.max(1, P.w - w - 20);
-      y = P.y + 36 + Math.random() * Math.max(1, P.h - h - 46);
+      x = B.l + 10 + Math.random() * Math.max(1, B.r - B.l - w - 20);
+      y = B.t + 10 + Math.random() * Math.max(1, B.b - B.t - h - 20);
       if (!tiles.some((t) => x < t.x + t.w + 8 && t.x < x + w + 8 && y < t.y + t.h + 8 && t.y < y + h + 8)) break;
     }
     const ang = Math.random() * Math.PI * 2, sp = 10 + Math.random() * 14;
@@ -140,8 +187,8 @@
   }
   function eject(t) {
     if (t.slot) { t.slot.tile = null; t.slot.el.classList.remove("full"); t.slot.el.style.width = ""; t.slot = null; }
-    const P = poolRect();
-    t.x = Math.min(Math.max(t.x, P.x + 10), P.x + P.w - t.w - 10);
+    measureArea();
+    t.x = Math.min(Math.max(t.x, B.l + 10), B.r - t.w - 10);
     t.vx = (Math.random() - .5) * 120; t.vy = (Math.random() - .5) * 120;
   }
   function judge() {
@@ -216,28 +263,41 @@
   /* ---------- hand input (MediaPipe) ---------- */
   const TV = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/";
   const MODEL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
-  let landmarker = null, lastT = -1, hand = null, handSeen = 0, stream = null;
-  function mapPt(p) {
+  let landmarker = null, lastT = -1, raw = null, hand = null, handSeen = 0, stream = null, mirrorFlip = false;
+  function camMap(p) { // raw landmark -> screen (mirrored, cover-fit)
     const W = app.clientWidth, H = app.clientHeight, vw = video.videoWidth || 1280, vh = video.videoHeight || 720;
     const s = Math.max(W / vw, H / vh), dw = vw * s, dh = vh * s;
     return { x: (W - dw) / 2 + (1 - p.x) * dw, y: (H - dh) / 2 + p.y * dh };
   }
   function updateHand() {
-    if (!hand || performance.now() - handSeen > 900) { cursor.visible = false; cursor.down = false; $("#handNote").hidden = false; return; }
+    if (!raw || performance.now() - handSeen > 700) { hand = null; cursor.visible = false; cursor.down = false; $("#handNote").hidden = false; return; }
     $("#handNote").hidden = true;
-    const p4 = hand[4], p8 = hand[8];
-    const size = Math.hypot(hand[0].x - hand[9].x, hand[0].y - hand[9].y) || 1;
+    const W = app.clientWidth, H = app.clientHeight, p4 = raw[4], p8 = raw[8];
+    const mid = { x: (p4.x + p8.x) / 2, y: (p4.y + p8.y) / 2 };
+    // reach: the middle 70% of the camera view covers the whole screen, so the edges are easy to touch
+    const gx = Math.min(1, Math.max(0, (1 - mid.x - .15) / .7)), gy = Math.min(1, Math.max(0, (mid.y - .15) / .7));
+    if (!cursor.visible) { cursor.x = gx * W; cursor.y = gy * H; }
+    cursor.x += (gx * W - cursor.x) * .5; cursor.y += (gy * H - cursor.y) * .5; cursor.visible = true;
+    // the 3D hand: mirrored, cover-fit, pinch point moved to the cursor, depth scaled by the displayed video width
+    const pm = camMap(mid), zs = (video.videoWidth || 1280) * Math.max(W / (video.videoWidth || 1280), H / (video.videoHeight || 720));
+    hand = raw.map((q) => { const c = camMap(q); return { x: c.x - pm.x + cursor.x, y: c.y - pm.y + cursor.y, z: q.z * zs }; });
+    const size = Math.hypot(raw[0].x - raw[9].x, raw[0].y - raw[9].y) || 1;
     const ratio = Math.hypot(p4.x - p8.x, p4.y - p8.y) / size;
     if (!cursor.down && ratio < .3) cursor.down = true; else if (cursor.down && ratio > .45) cursor.down = false;
-    const tx = (p4.x + p8.x) / 2, ty = (p4.y + p8.y) / 2;
-    if (!cursor.visible) { cursor.x = tx; cursor.y = ty; }
-    cursor.x += (tx - cursor.x) * .55; cursor.y += (ty - cursor.y) * .55; cursor.visible = true;
   }
   function handLoop() {
     if (mode !== "hand") return;
     if (landmarker && video.readyState >= 2 && video.currentTime !== lastT) {
       lastT = video.currentTime;
-      try { const r = landmarker.detectForVideo(video, performance.now()); const lm = r.landmarks && r.landmarks[0]; if (lm) { hand = lm.map(mapPt); handSeen = performance.now(); } } catch (_) {}
+      try {
+        const r = landmarker.detectForVideo(video, performance.now()), lm = r.landmarks && r.landmarks[0];
+        if (lm) {
+          raw = lm; handSeen = performance.now();
+          // MediaPipe sees the unmirrored frame, so "Left" is a real right hand: show the mirrored model for it
+          const hh = (r.handednesses && r.handednesses[0]) || (r.handedness && r.handedness[0]), lab = hh && hh[0] && hh[0].categoryName;
+          if (lab && window.HandView) HandView.setMirrored((lab === "Left") !== mirrorFlip);
+        }
+      } catch (_) {}
     }
     requestAnimationFrame(handLoop);
   }
@@ -266,6 +326,7 @@
   }
   function begin(m) {
     mode = m; document.body.classList.toggle("hand", m === "hand");
+    raw = null; hand = null; handBtn.hidden = m !== "hand"; handPop.hidden = true;
     $("#modeChip").textContent = m === "hand" ? "Hand tracking" : "Mouse / touch";
     $("#start").hidden = true; $("#handNote").hidden = m !== "hand";
     cursor.down = false; cursor.visible = false;
@@ -273,7 +334,9 @@
   }
   $("#playCam").onclick = () => { unlockAudio(); startCamera(); };
   $("#playMouse").onclick = () => { unlockAudio(); if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; } begin("pointer"); };
-  $("#menuBtn").onclick = () => { $("#start").hidden = false; $("#startMsg").hidden = true; };
+  $("#menuBtn").onclick = () => { $("#start").hidden = false; $("#startMsg").hidden = true; handPop.hidden = true; };
+  // hidden: M flips the mirrored hand model if it ever looks like the wrong hand
+  window.addEventListener("keydown", (e) => { if ((e.key === "m" || e.key === "M") && !e.ctrlKey && !e.metaKey && !e.altKey && window.HandView) { mirrorFlip = !mirrorFlip; HandView.setMirrored(!HandView.isMirrored()); } });
   $("#newBtn").onclick = () => { if (!locked || !$("#done").hidden) newProblem(); };
   $("#hintBtn").onclick = () => showHint();
   $("#nextBtn").onclick = () => newProblem();
@@ -293,7 +356,8 @@
       if (!cursor.down && cursor.prevDown) release();
       cursor.prevDown = cursor.down;
     }
-    const a = app.getBoundingClientRect(), P = poolRect();
+    const a = app.getBoundingClientRect();
+    measureArea();
     const hoverSlot = held ? slotAt(cursor.x, cursor.y) : null;
     slots.forEach((s) => s.el.classList.toggle("over", s === hoverSlot));
     const hoverTile = !held && mode && (mode === "pointer" || cursor.visible) ? tileAt(cursor.x, cursor.y) : null;
@@ -305,7 +369,7 @@
       } else {
         const sp = Math.hypot(t.vx, t.vy); if (sp > 26) { t.vx *= .95; t.vy *= .95; }
         t.x += t.vx * dt; t.y += t.vy * dt;
-        const l = P.x + 8, r = P.x + P.w - t.w - 8, tp = P.y + 34, b = P.y + P.h - t.h - 8;
+        const l = B.l + 8, r = B.r - t.w - 8, tp = B.t + 8, b = B.b - t.h - 8;
         if (t.x < l) { t.x += (l - t.x) * .2; t.vx = Math.abs(t.vx) || 10; }
         if (t.x > r) { t.x += (r - t.x) * .2; t.vx = -Math.abs(t.vx) || -10; }
         if (t.y < tp) { t.y += (tp - t.y) * .2; t.vy = Math.abs(t.vy) || 10; }
@@ -332,13 +396,11 @@
   function draw(dt) {
     ctx.clearRect(0, 0, app.clientWidth, app.clientHeight);
     if (mode === "hand" && hand && cursor.visible) {
-      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(255,255,255,.8)"; ctx.lineCap = "round"; ctx.beginPath();
-      for (const [i, j] of CONN) { ctx.moveTo(hand[i].x, hand[i].y); ctx.lineTo(hand[j].x, hand[j].y); }
-      ctx.stroke(); ctx.fillStyle = "#fff"; hand.forEach((p) => { ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, 7); ctx.fill(); });
+      if (handViewOK) HandView.draw(hand, look.color);
       ctx.beginPath(); ctx.arc(cursor.x, cursor.y, cursor.down ? 12 : 18, 0, 7); ctx.lineWidth = 4;
       ctx.strokeStyle = cursor.down ? "#46cf86" : "#f5b83d"; ctx.stroke();
       if (cursor.down) { ctx.fillStyle = "rgba(70,207,134,.4)"; ctx.fill(); }
-    }
+    } else if (handViewOK) HandView.hide();
     particles = particles.filter((p) => (p.life -= dt) > 0);
     for (const p of particles) {
       p.vy += 800 * dt; p.x += p.vx * dt; p.y += p.vy * dt;
