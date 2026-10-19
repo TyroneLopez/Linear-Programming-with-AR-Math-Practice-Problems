@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Linear Programming</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="assets/katex/katex.min.css">
+<style>
+/* Layout: one 16:9 slide stage scaled to fit the window, a slim control bar below, guide notes in a drawer. */
+:root{
+  --ground:#e9ebee; --bar:#ffffff; --bar-fg:#111111; --bar-muted:#6b7280; --bar-line:#d9dce1; --accent:#2563eb;
+  --ui:Arial,Helvetica,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#16181c;--bar:#1f2227;--bar-fg:#f3f4f6;--bar-muted:#a2a8b3;--bar-line:#33373e;--accent:#6b9bff;color-scheme:dark}}
+:root[data-theme="dark"]{--ground:#16181c;--bar:#1f2227;--bar-fg:#f3f4f6;--bar-muted:#a2a8b3;--bar-line:#33373e;--accent:#6b9bff;color-scheme:dark}
+html,body{height:100%}
+body{background:var(--ground);color:var(--bar-fg);font-family:var(--ui);display:flex;flex-direction:column;overflow:hidden}
+#main{flex:1;display:flex;min-height:0}
+#viewport{position:relative;flex:1;min-width:0;overflow:hidden;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+#stage{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;background:#fff;color:#111;overflow:hidden;
+  box-shadow:0 10px 40px rgba(0,0,0,.18);cursor:pointer;-webkit-user-select:none;user-select:none}
+.el{position:absolute;transition:opacity .55s ease, left 1s cubic-bezier(.45,0,.2,1), top 1s cubic-bezier(.45,0,.2,1), width 1s cubic-bezier(.45,0,.2,1), height 1s cubic-bezier(.45,0,.2,1), font-size 1s ease, background-color .8s ease, border-radius 1s ease}
+.el.vec{left:0;top:0;width:1280px;height:720px;overflow:visible;pointer-events:none}
+.el.vec path{transition:d 1s cubic-bezier(.45,0,.2,1), fill .8s ease, stroke .8s ease, stroke-width .8s ease}
+.el.noanim,.el.noanim path{transition:none!important}
+.box{box-sizing:border-box;display:block;text-decoration:none;color:inherit}
+.box .inner{display:flex;flex-direction:column;width:100%;height:100%;box-sizing:border-box;line-height:1.2;overflow:visible}
+.box .p.bul{padding-left:1.1em;position:relative}
+.box .p.bul::before{content:"•";position:absolute;left:.2em}
+.box sub{font-size:.7em;vertical-align:-.25em;line-height:0}
+.box .eqline{width:100%}
+.box .katex{font-size:1.05em}
+a.link{cursor:pointer}
+a.link:hover{filter:brightness(1.08)}
+a.link:focus-visible{outline:3px solid #f59e0b;outline-offset:3px}
+#bar{display:flex;align-items:center;gap:8px;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:var(--bar);border-top:1px solid var(--bar-line);flex-wrap:wrap}
+#bar .title{font-weight:700;font-size:14px;margin-right:auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#bar button{font:700 13px var(--ui);color:var(--bar-fg);background:transparent;border:1px solid var(--bar-line);border-radius:999px;padding:7px 14px;cursor:pointer}
+#bar button:hover{border-color:var(--accent);color:var(--accent)}
+#bar button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#count{font-size:13px;color:var(--bar-muted);font-variant-numeric:tabular-nums;min-width:64px;text-align:center}
+#notes{width:0;overflow:hidden;background:var(--bar);border-left:1px solid var(--bar-line);transition:width .3s ease}
+body.notes-open #notes{width:min(360px,45vw)}
+#notes .wrap{width:min(360px,45vw);box-sizing:border-box;padding:18px 18px 18px 20px;height:100%;overflow:auto}
+#notes h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--bar-muted);margin:0 0 10px}
+#notesText{white-space:pre-wrap;font-size:14px;line-height:1.55;margin:0;font-family:var(--ui)}
+@media (max-width:560px){#bar .title{display:none} #bar{justify-content:center}}
+@media (prefers-reduced-motion:reduce){.el,.el.vec path{transition:opacity .2s linear!important}}
+</style>
+
+<div id="main">
+  <div id="viewport"><div id="stage" role="region" aria-label="Slide"></div></div>
+  <aside id="notes" aria-label="Guide notes"><div class="wrap"><h2>Guide notes</h2><pre id="notesText"></pre></div></aside>
+</div>
+<div id="bar">
+  <span class="title">Linear Programming</span>
+  <button id="homeBtn" type="button" title="Overview (Home)">Overview</button>
+  <button id="prevBtn" type="button" title="Previous (←)">‹ Back</button>
+  <span id="count" aria-live="polite">1 / 1</span>
+  <button id="nextBtn" type="button" title="Next (→ or Space)">Next ›</button>
+  <button id="notesBtn" type="button" title="Guide notes (N)">Notes</button>
+  <button id="fsBtn" type="button" title="Fullscreen (F)">Fullscreen</button>
+</div>
+
+<script src="assets/katex/katex.min.js"></script>
+<script src="assets/deck-data.js"></script>
+<script src="assets/deck.js"></script>
+
+</body>
+</html>

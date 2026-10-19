@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>The graphical method Practice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Lilita+One&display=swap">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<link rel="stylesheet" href="practice.css">
+<div id="app">
+  <video id="cam" playsinline muted></video>
+  <header id="hud">
+    <div class="brand"><a class="btn" href="../index.html#p_ex2_3" title="Back to the lesson">‹ <span class="lbl">Lesson</span></a><h1>Practice: <span>The graphical method</span></h1></div>
+    <span class="chip" id="hudStep"></span>
+    <span class="chip">Score <b id="hudScore">0</b></span>
+    <span class="chip opt">Streak <b id="hudStreak">0</b></span>
+    <span class="chip opt">Best <b id="hudBest">0</b></span>
+    <button class="btn" id="hintBtn" type="button">Hint</button>
+    <button class="btn" id="newBtn" type="button"><span class="lbl">New problem</span><span aria-hidden="true">↻</span></button>
+    <button class="btn" id="menuBtn" type="button" title="Change controls"><span id="modeChip">Controls</span></button>
+  </header>
+  <main id="board">
+    <section id="left" class="panel"><div id="prompt"></div><div id="visual" hidden></div></section>
+    <section id="mid" class="panel">
+      <div class="head"><span class="ptitle">Solution, one line at a time</span></div>
+      <div id="flash"></div>
+      <ol id="lines"></ol>
+      <div id="hintBox" hidden></div>
+    </section>
+    <section id="pool" class="panel"><div class="ptitle"><span>Answer blocks</span><span>drag into the boxes</span></div><div id="handNote" hidden>Show one hand to the camera. Pinch to grab a block, open to drop it.</div></section>
+  </main>
+  <div id="tiles"></div>
+  <canvas id="fx"></canvas>
+  <div class="screen" id="start">
+    <div class="card">
+      <h2>Practice: <span>The graphical method</span></h2>
+      <p>Corner points and the maximum of z. Every try gives new numbers. Fill the boxes on each line; a correct line unlocks the next one until you reach the final answer.</p>
+      <div class="how"><div><b>1</b>Grab a floating answer block</div><div><b>2</b>Drop it into a box on the current line</div><div><b>3</b>Fill every box to check the line</div></div>
+      <div class="acts"><button class="btn primary big" id="playCam" type="button">Play with hand pinch</button><button class="btn big" id="playMouse" type="button">Play with mouse / touch</button></div>
+      <div id="startMsg" hidden></div>
+      <a class="back" href="index.html">All practice activities</a>
+    </div>
+  </div>
+  <div class="screen" id="done" hidden>
+    <div class="card">
+      <h2 id="doneText">Solved!</h2>
+      <p id="doneSub"></p>
+      <div class="acts"><button class="btn primary big" id="nextBtn" type="button">Next problem</button><a class="btn big" href="../index.html#p_ex2_3">Back to the lesson</a></div>
+      <a class="back" href="index.html">All practice activities</a>
+    </div>
+  </div>
+</div>
+<script>window.PRACTICE = { id: "graphical", title: "The graphical method" };</script>
+<script src="../assets/katex/katex.min.js"></script>
+<script src="problems.js"></script>
+<script src="practice.js"></script>
+
+</body>
+</html>
