@@ -28,7 +28,7 @@ body{background:var(--ground);color:var(--bar-fg);font-family:var(--ui);display:
 .el.vec path{transition:d 1s cubic-bezier(.45,0,.2,1), fill .8s ease, stroke .8s ease, stroke-width .8s ease}
 .el.noanim,.el.noanim path{transition:none!important}
 .box{box-sizing:border-box;display:block;text-decoration:none;color:inherit}
-.box .inner{display:flex;flex-direction:column;width:100%;height:100%;box-sizing:border-box;line-height:1.2;overflow:visible}
+.box>.inner{display:flex;flex-direction:column;width:100%;height:100%;box-sizing:border-box;line-height:1.2;overflow:visible}
 .box .p.bul{padding-left:1.1em;position:relative}
 .box .p.bul::before{content:"•";position:absolute;left:.2em}
 .box sub{font-size:.7em;vertical-align:-.25em;line-height:0}

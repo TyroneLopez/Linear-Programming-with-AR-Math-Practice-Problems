@@ -151,12 +151,12 @@
   }
   function tableHTML(e) {
     const cw = e.colW || [], rh = (e.rowH || 0.36) * PX, fs = (e.fontSize || 12) * PT;
-    const pad = e.margin ? e.margin.map((v) => v * PT + "px").join(" ") : "2px 6px";
+    const pad = e.margin ? "0 " + (e.margin[1] * PT) + "px 0 " + (e.margin[0] * PT) + "px" : "0 6px";
     const bc = e.border && e.border.color ? "#" + e.border.color : "#E5E7EB";
     return `<table style="font-size:${fs}px;border-collapse:collapse;width:100%">` + e.rows.map((r) =>
       "<tr>" + r.map((c, ci) => {
         const o = c.options || {};
-        return `<td style="width:${(cw[ci] || 1) * PX}px;height:${rh}px;padding:${pad};border:1px solid ${bc};` +
+        return `<td style="box-sizing:border-box;width:${(cw[ci] || 1) * PX}px;height:${rh}px;line-height:1.15;padding:${pad};border:1px solid ${bc};` +
           `background:${o.fill ? "#" + o.fill.color : "transparent"};color:#${o.color || "111111"};font-weight:${o.bold ? 700 : 400};text-align:${o.align || "left"}">${runsHTML(c.text)}</td>`;
       }).join("") + "</tr>").join("") + "</table>";
   }
